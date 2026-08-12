@@ -50,9 +50,13 @@ function ProfilePage() {
   }, []);
 
   const save = (v: string) => {
+    const prev = getPlayerName();
     setName(v);
     setPlayerName(v);
+    // keep saved scores attached to the player after a rename
+    if (v.trim()) setBoard(renameBoardEntries(prev, v));
   };
+
 
   const shareCard = async () => {
     setSharing(true);
