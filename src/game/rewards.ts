@@ -1,5 +1,5 @@
 import { secureGet, secureSet, safeInt } from "./secureStore";
-import { getHistory, getBank, setBank } from "./shop";
+import { getMatchesPlayed, getBank, setBank } from "./shop";
 
 /** Games you have to finish to unlock one mystery box. */
 export const GAMES_PER_REWARD = 10;
@@ -27,7 +27,7 @@ export interface RewardState {
 const getClaimed = () => safeInt(secureGet<number>(CLAIMED, 0), 9999);
 
 export function getRewardState(): RewardState {
-  const played = getHistory().length;
+  const played = getMatchesPlayed();
   const claimed = getClaimed();
   const earned = Math.floor(played / GAMES_PER_REWARD);
   const ready = earned > claimed;

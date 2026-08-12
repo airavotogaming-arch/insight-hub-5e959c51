@@ -135,6 +135,7 @@ export interface MatchEntry {
 }
 
 const HISTORY = "carnival-history";
+const PLAYED = "carnival-matches-played";
 const MAX_HISTORY = 25;
 
 export const getHistory = (): MatchEntry[] =>
@@ -148,7 +149,12 @@ export const getHistory = (): MatchEntry[] =>
     }))
     .slice(0, MAX_HISTORY);
 
+/** Lifetime count of finished matches (history itself is trimmed to 25). */
+export const getMatchesPlayed = () =>
+  Math.max(safeInt(secureGet<number>(PLAYED, 0), 999_999), getHistory().length);
+
 export const addMatch = (name: string, score: number, level: number): MatchEntry[] => {
+  secureSet(PLAYED, getMatchesPlayed() + 1);
   const entry: MatchEntry = {
     name: name.trim().slice(0, 14).toUpperCase(),
     score: safeInt(score, MAX_SCORE),
