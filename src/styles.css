@@ -2224,3 +2224,20 @@ html {
 .pf-tab.is-on { color: #4a2400; background: linear-gradient(180deg, #ffe89a, #ffb028); border-color: #fff3c4; }
 .pf-when { color: #cbb8f2; }
 .pf-lvl { font-size: 0.7rem; color: #ffd76a; letter-spacing: 0.06em; }
+.pf-filters { display: flex; gap: 0.4rem; }
+.pf-filter-input, .pf-filter-select {
+  flex: 1; min-width: 0; padding: 0.45rem 0.6rem; border-radius: 0.55rem;
+  font-size: 0.75rem; color: #fff; background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,200,74,0.4); outline: none;
+}
+.pf-filter-input:focus, .pf-filter-select:focus { border-color: #ffc84a; }
+.pf-filter-select option { color: #1a0d2e; }
+.pf-pager { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.pf-page-btn {
+  padding: 0.4rem 0.7rem; border-radius: 0.55rem; cursor: pointer;
+  font-family: var(--font-fair); font-size: 0.65rem; letter-spacing: 0.06em;
+  color: #4a2400; background: linear-gradient(180deg, #ffe89a, #ffb028);
+  border: 1px solid #fff3c4;
+}
+.pf-page-btn:disabled { opacity: 0.45; cursor: default; }
+.pf-page-info { font-size: 0.7rem; color: #cbb8f2; }

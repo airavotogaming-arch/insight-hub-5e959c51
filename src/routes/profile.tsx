@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import avatarImg from "@/assets/menu-avatar.png";
 import {
   getPlayerName,
@@ -55,6 +55,9 @@ function ProfilePage() {
   const [board, setBoard] = useState<ScoreEntry[]>([]);
   const [history, setHistory] = useState<MatchEntry[]>([]);
   const [tab, setTab] = useState<"scores" | "history">("scores");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [sort, setSort] = useState<"newest" | "score">("newest");
+  const [page, setPage] = useState(1);
   const [sharing, setSharing] = useState(false);
   const [shareNote, setShareNote] = useState("");
 
@@ -65,6 +68,22 @@ function ProfilePage() {
     setBoard(getBoard());
     setHistory(getHistory());
   }, []);
+
+  const PAGE_SIZE = 6;
+
+  const filtered = useMemo(() => {
+    const q = levelFilter.trim();
+    const rows = q ? history.filter((e) => String(e.level).includes(q)) : history;
+    return [...rows].sort((a, b) => (sort === "score" ? b.score - a.score : b.at - a.at));
+  }, [history, levelFilter, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [levelFilter, sort, tab]);
 
   const save = (v: string) => {
     const prev = getPlayerName();
@@ -194,16 +213,64 @@ function ProfilePage() {
             ))}
           </ul>
         ) : (
-          <ul className="pf-board">
-            {history.length === 0 && <li className="pf-empty">No matches played yet.</li>}
-            {history.map((e, i) => (
-              <li key={`${e.at}-${i}`}>
-                <span className="pf-when">{formatWhen(e.at)}</span>
-                <span className="pf-lvl">LVL {e.level}</span>
-                <strong>{e.score.toLocaleString()}</strong>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="pf-filters">
+              <input
+                className="pf-filter-input"
+                value={levelFilter}
+                inputMode="numeric"
+                placeholder="Search level…"
+                aria-label="Filter matches by level"
+                onChange={(e) => setLevelFilter(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+              />
+              <select
+                className="pf-filter-select"
+                value={sort}
+                aria-label="Sort matches"
+                onChange={(e) => setSort(e.target.value === "score" ? "score" : "newest")}
+              >
+                <option value="newest">Newest</option>
+                <option value="score">Highest score</option>
+              </select>
+            </div>
+
+            <ul className="pf-board">
+              {pageRows.length === 0 && (
+                <li className="pf-empty">
+                  {history.length === 0 ? "No matches played yet." : "No matches at that level."}
+                </li>
+              )}
+              {pageRows.map((e, i) => (
+                <li key={`${e.at}-${i}`}>
+                  <span className="pf-when">{formatWhen(e.at)}</span>
+                  <span className="pf-lvl">LVL {e.level}</span>
+                  <strong>{e.score.toLocaleString()}</strong>
+                </li>
+              ))}
+            </ul>
+
+            {filtered.length > PAGE_SIZE && (
+              <div className="pf-pager">
+                <button
+                  className="pf-page-btn"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                >
+                  ‹ PREV
+                </button>
+                <span className="pf-page-info">
+                  {safePage} / {pageCount}
+                </span>
+                <button
+                  className="pf-page-btn"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={safePage >= pageCount}
+                >
+                  NEXT ›
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>
