@@ -125,3 +125,48 @@ export const setPlayerName = (name: string) => secureSet(PLAYER_NAME, name.trim(
 
 export const getMaxLevel = () => Math.max(1, safeInt(secureGet<number>(MAX_LEVEL, 1), 999));
 export const setMaxLevel = (v: number) => secureSet(MAX_LEVEL, Math.max(1, safeInt(v, 999)));
+
+/* ---------- match history ---------- */
+export interface MatchEntry {
+  name: string;
+  score: number;
+  level: number;
+  at: number; // epoch ms
+}
+
+const HISTORY = "carnival-history";
+const MAX_HISTORY = 25;
+
+export const getHistory = (): MatchEntry[] =>
+  secureGetOrMigrate<MatchEntry[]>(HISTORY, [], legacyJson)
+    .filter((e) => e && typeof e === "object")
+    .map((e) => ({
+      name: typeof e.name === "string" ? e.name.slice(0, 14).toUpperCase() : "",
+      score: safeInt(e.score, MAX_SCORE),
+      level: Math.max(1, safeInt(e.level, 999)),
+      at: safeInt(e.at),
+    }))
+    .slice(0, MAX_HISTORY);
+
+export const addMatch = (name: string, score: number, level: number): MatchEntry[] => {
+  const entry: MatchEntry = {
+    name: name.trim().slice(0, 14).toUpperCase(),
+    score: safeInt(score, MAX_SCORE),
+    level: Math.max(1, safeInt(level, 999)),
+    at: Date.now(),
+  };
+  const next = [entry, ...getHistory()].slice(0, MAX_HISTORY);
+  secureSet(HISTORY, next);
+  return next;
+};
+
+/** Keeps history attached to the player after a rename. */
+export const renameHistoryEntries = (from: string, to: string): MatchEntry[] => {
+  const oldName = from.trim().slice(0, 14).toUpperCase();
+  const newName = to.trim().slice(0, 14).toUpperCase();
+  const hist = getHistory();
+  if (!newName) return hist;
+  const next = hist.map((e) => (!oldName || e.name === oldName ? { ...e, name: newName } : e));
+  secureSet(HISTORY, next);
+  return next;
+};
