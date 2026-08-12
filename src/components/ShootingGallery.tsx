@@ -719,11 +719,15 @@ export default function ShootingGallery() {
   const submitName = () => {
     const clean = nameDraft.trim().slice(0, 14);
     if (!clean) return;
+    const prev = playerName;
     setPlayerName(clean);
     setPlayerNameState(clean);
+    // old players: re-tag their existing local scores with the name they just chose
+    setBoard(renameBoardEntries(prev, clean));
     setShowNamePrompt(false);
     launchRound();
   };
+
 
   const confirmBriefing = () => {
     setShowBriefing(false);
