@@ -261,6 +261,20 @@ export default function ShootingGallery() {
     setTouchSensitivityState(readTouchSensitivity());
   }, []);
 
+  // Ask returning players ("old users") who never set a name to enter one,
+  // so their scores land on the global leaderboard under their name.
+  // Brand-new players are left alone — they get prompted when they hit Play.
+  useEffect(() => {
+    if (getPlayerName()) return;
+    const hasProgress =
+      getBank() > 0 || getMaxLevel() > 1 || getBoard().length > 0;
+    if (hasProgress) {
+      setNameDraft("");
+      setShowNamePrompt(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     gameRef.current?.setSkin(skin.hex);
   }, [skin.hex, state.phase]);
