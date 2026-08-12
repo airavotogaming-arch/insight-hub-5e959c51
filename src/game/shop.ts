@@ -73,18 +73,31 @@ export const setEquipped = (id: string) => secureSet(EQUIPPED, id);
 export const getBoard = (): ScoreEntry[] =>
   secureGetOrMigrate<ScoreEntry[]>(BOARD, [], legacyJson)
     .filter((e) => e && typeof e.name === "string")
-    .map((e) => ({ name: e.name.slice(0, 3).toUpperCase(), score: safeInt(e.score, MAX_SCORE) }))
-    .slice(0, 3);
+    .map((e) => ({ name: e.name.slice(0, 14).toUpperCase(), score: safeInt(e.score, MAX_SCORE) }))
+    .slice(0, 5);
 
 export const saveScore = (name: string, score: number): ScoreEntry[] => {
-  const clean = name.slice(0, 3).toUpperCase();
+  const clean = name.trim().slice(0, 14).toUpperCase();
   if (!clean) return getBoard();
   const next = [...getBoard(), { name: clean, score: safeInt(score, MAX_SCORE) }]
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .slice(0, 5);
   secureSet(BOARD, next);
   return next;
 };
+
+/** Re-tags this player's saved scores when they rename themselves. */
+export const renameBoardEntries = (from: string, to: string): ScoreEntry[] => {
+  const oldName = from.trim().slice(0, 14).toUpperCase();
+  const newName = to.trim().slice(0, 14).toUpperCase();
+  const board = getBoard();
+  if (!newName) return board;
+  // entries with no owner (or the old name) belong to this local player
+  const next = board.map((e) => (!oldName || e.name === oldName ? { ...e, name: newName } : e));
+  secureSet(BOARD, next);
+  return next;
+};
+
 
 
 /* ---------- gun skins ---------- */
