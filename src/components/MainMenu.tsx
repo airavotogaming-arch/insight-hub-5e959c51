@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { GAMES_PER_REWARD, claimReward, getRewardState, type RewardState } from "@/game/rewards";
 import JoyBlasterLogo from "@/components/JoyBlasterLogo";
 import menuBg from "@/assets/menu-bg.png";
 import blasterImg from "@/assets/menu-blaster.png";
@@ -17,6 +19,8 @@ export interface MainMenuProps {
   onInstructions: () => void;
   onSettings: () => void;
   onLeaderboard?: () => void;
+  /** called after a mystery box is opened, with the new coin balance */
+  onRewardClaimed?: (bank: number) => void;
   onTutorial?: (() => void) | undefined;
 }
 
@@ -41,8 +45,25 @@ export default function MainMenu({
   onInstructions,
   onSettings,
   onLeaderboard,
+  onRewardClaimed,
   onTutorial,
 }: MainMenuProps) {
+  const [reward, setReward] = useState<RewardState | null>(null);
+  const [rewardNote, setRewardNote] = useState("");
+
+  // read progress on mount and whenever the coin balance changes (i.e. after a round)
+  useEffect(() => {
+    setReward(getRewardState());
+  }, [bank, best]);
+
+  const openBox = useCallback(() => {
+    const res = claimReward();
+    if (!res.ok) return;
+    setReward(getRewardState());
+    setRewardNote(`+${res.amount.toLocaleString()} coins!`);
+    onRewardClaimed?.(res.bank);
+    window.setTimeout(() => setRewardNote(""), 2600);
+  }, [onRewardClaimed]);
   const level = Math.max(1, levelProp ?? Math.floor(best / 5000) + 1);
   const xp = best % 5000;
   const coins = bank;
@@ -202,12 +223,36 @@ export default function MainMenu({
         <aside className="mm-col mm-right">
           <section className="mm-panel mm-panel-red">
             <h2 className="mm-panel-title">NEXT REWARD</h2>
-            <img className="mm-gift" src={giftImg} alt="Mystery reward box" loading="lazy" width={640} height={640} />
+            <img
+              className={`mm-gift ${reward?.ready ? "is-ready" : ""}`}
+              src={giftImg}
+              alt="Mystery reward box"
+              loading="lazy"
+              width={640}
+              height={640}
+            />
             <div className="mm-progress-row center">
-              <Bar value={7} max={10} tone="cyan" />
-              <span className="mm-progress-text">7/10</span>
+              <Bar value={reward?.progress ?? 0} max={GAMES_PER_REWARD} tone="cyan" />
+              <span className="mm-progress-text">
+                {reward?.progress ?? 0}/{GAMES_PER_REWARD}
+              </span>
             </div>
-            <span className="mm-panel-note">Play 3 more games</span>
+            {reward?.ready ? (
+              <button className="mm-claim" onClick={openBox}>
+                OPEN BOX
+                <span className="mm-upgrade-cost">
+                  <span className="mm-res-icon coin">🪙</span>
+                  {reward.amount.toLocaleString()}
+                </span>
+              </button>
+            ) : (
+              <span className="mm-panel-note">
+                {reward
+                  ? `Play ${reward.remaining} more game${reward.remaining === 1 ? "" : "s"} · 🪙${reward.amount.toLocaleString()}`
+                  : "Play games to fill the box"}
+              </span>
+            )}
+            {rewardNote && <span className="mm-panel-note mm-reward-note">{rewardNote}</span>}
           </section>
 
           <section className="mm-panel mm-panel-blue mm-weapon">

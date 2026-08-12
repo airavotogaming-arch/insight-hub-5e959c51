@@ -2241,3 +2241,13 @@ html {
 }
 .pf-page-btn:disabled { opacity: 0.45; cursor: default; }
 .pf-page-info { font-size: 0.7rem; color: #cbb8f2; }
+.mm-gift.is-ready { animation: mm-gift-pop 1.1s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(255,212,74,0.75)); }
+@keyframes mm-gift-pop { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.07) rotate(2deg); } }
+.mm-claim {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%;
+  margin-top: 0.3rem; padding: 0.4rem 0.5rem; border-radius: 0.55rem; cursor: pointer;
+  font-family: var(--font-fair); font-size: 0.6rem; letter-spacing: 0.06em; color: #4a2400;
+  background: linear-gradient(180deg, #ffe89a, #ffb028); border: 2px solid #fff3c4;
+}
+.mm-claim:hover { filter: brightness(1.07); }
+.mm-reward-note { color: #8bff5a; }
