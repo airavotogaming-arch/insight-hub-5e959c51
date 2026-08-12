@@ -7,8 +7,10 @@ import {
   getMaxLevel,
   getBank,
   getBoard,
+  renameBoardEntries,
   type ScoreEntry,
 } from "@/game/shop";
+
 import { renderProfileCard } from "@/lib/profileCard";
 
 export const Route = createFileRoute("/profile")({
