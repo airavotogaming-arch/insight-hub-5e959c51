@@ -2214,3 +2214,13 @@ html {
 .pf-share:hover:not(:disabled) { filter: brightness(1.06); }
 .pf-share:disabled { opacity: 0.7; cursor: default; }
 .pf-note { margin: 0; text-align: center; font-size: 0.7rem; color: #cbb8f2; }
+.pf-tabs { display: flex; gap: 0.4rem; margin-top: 0.2rem; }
+.pf-tab {
+  flex: 1; padding: 0.45rem 0.5rem; border-radius: 0.6rem; cursor: pointer;
+  font-family: var(--font-fair); font-size: 0.7rem; letter-spacing: 0.06em;
+  color: #cbb8f2; background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.pf-tab.is-on { color: #4a2400; background: linear-gradient(180deg, #ffe89a, #ffb028); border-color: #fff3c4; }
+.pf-when { color: #cbb8f2; }
+.pf-lvl { font-size: 0.7rem; color: #ffd76a; letter-spacing: 0.06em; }

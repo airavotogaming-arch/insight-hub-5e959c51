@@ -18,6 +18,8 @@ import {
   getBoard,
   saveScore,
   renameBoardEntries,
+  addMatch,
+  renameHistoryEntries,
 
 
   getOwnedGuns,
@@ -321,7 +323,10 @@ export default function ShootingGallery() {
     if (state.phase === "over") {
       setBankState(getBank());
       const who = playerName || getPlayerName();
-      if (who && state.score > 0) setBoard(saveScore(who, state.score));
+      if (who && state.score > 0) {
+        setBoard(saveScore(who, state.score));
+        addMatch(who, state.score, state.wave);
+      }
       void playgamaSubmitScore(state.score, who || undefined);
     }
   }, [state.phase]);
@@ -726,6 +731,7 @@ export default function ShootingGallery() {
     setPlayerNameState(clean);
     // old players: re-tag their existing local scores with the name they just chose
     setBoard(renameBoardEntries(prev, clean));
+    renameHistoryEntries(prev, clean);
     setShowNamePrompt(false);
     launchRound();
   };
