@@ -17,6 +17,8 @@ import {
   setEquipped,
   getBoard,
   saveScore,
+  renameBoardEntries,
+
 
   getOwnedGuns,
   addOwnedGun,
