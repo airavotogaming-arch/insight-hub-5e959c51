@@ -16,6 +16,7 @@ export interface MainMenuProps {
   onHelp: () => void;
   onInstructions: () => void;
   onSettings: () => void;
+  onLeaderboard?: () => void;
   onTutorial?: (() => void) | undefined;
 }
 
@@ -39,6 +40,7 @@ export default function MainMenu({
   onHelp,
   onInstructions,
   onSettings,
+  onLeaderboard,
   onTutorial,
 }: MainMenuProps) {
   const level = Math.max(1, levelProp ?? Math.floor(best / 5000) + 1);
@@ -233,7 +235,7 @@ export default function MainMenu({
 
       {/* ---------------- bottom nav ---------------- */}
       <nav className="mm-bottom">
-        <button className="mm-nav" onClick={onHelp}>
+        <button className="mm-nav" onClick={onLeaderboard ?? onHelp}>
           <span>🏆</span> LEADERBOARD
         </button>
         <button className="mm-nav" onClick={onShop}>
