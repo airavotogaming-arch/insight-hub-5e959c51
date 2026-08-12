@@ -61,10 +61,22 @@ function simulateAd(kind: "interstitial" | "rewarded"): Promise<void> {
 
 type BridgeState = "loading" | "opened" | "closed" | "failed" | "rewarded";
 
+export type LeaderboardEntry = { name: string; score: number; rank?: number };
+
 type PlaygamaBridge = {
   initialize: () => Promise<void>;
   platform: {
     sendMessage: (message: string) => void;
+  };
+  player?: {
+    id?: string | null;
+    name?: string | null;
+    isAuthorized?: boolean;
+    authorize?: () => Promise<void>;
+  };
+  leaderboard?: {
+    setScore: (options: Record<string, unknown>) => Promise<void>;
+    getEntries: (options?: Record<string, unknown>) => Promise<unknown>;
   };
   advertisement: {
     interstitialState?: BridgeState;
@@ -74,6 +86,7 @@ type PlaygamaBridge = {
     on: (event: string, cb: (state: BridgeState) => void) => () => void;
   };
 };
+
 
 declare global {
   interface Window {
