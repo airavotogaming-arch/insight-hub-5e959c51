@@ -312,13 +312,16 @@ export default function ShootingGallery() {
     };
   }, [showLeaderboard]);
 
-  // when a round ends, refresh the ticket bank
+  // when a round ends, refresh the ticket bank and record the score under the saved name
   useEffect(() => {
     if (state.phase === "over") {
       setBankState(getBank());
-      void playgamaSubmitScore(state.score, playerName || undefined);
+      const who = playerName || getPlayerName();
+      if (who && state.score > 0) setBoard(saveScore(who, state.score));
+      void playgamaSubmitScore(state.score, who || undefined);
     }
   }, [state.phase]);
+
 
   // mobile: show the "aim from below the table" hint and start the live tutorial
   useEffect(() => {
