@@ -8,7 +8,10 @@ import {
   getBank,
   getBoard,
   renameBoardEntries,
+  getHistory,
+  renameHistoryEntries,
   type ScoreEntry,
+  type MatchEntry,
 } from "@/game/shop";
 
 import { renderProfileCard } from "@/lib/profileCard";
@@ -34,11 +37,24 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
+const formatWhen = (ms: number) => {
+  if (!ms) return "—";
+  const d = new Date(ms);
+  const diff = Date.now() - ms;
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+    " · " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+};
+
 function ProfilePage() {
   const [name, setName] = useState("");
   const [level, setLevel] = useState(1);
   const [coins, setCoins] = useState(0);
   const [board, setBoard] = useState<ScoreEntry[]>([]);
+  const [history, setHistory] = useState<MatchEntry[]>([]);
+  const [tab, setTab] = useState<"scores" | "history">("scores");
   const [sharing, setSharing] = useState(false);
   const [shareNote, setShareNote] = useState("");
 
@@ -47,6 +63,7 @@ function ProfilePage() {
     setLevel(getMaxLevel());
     setCoins(getBank());
     setBoard(getBoard());
+    setHistory(getHistory());
   }, []);
 
   const save = (v: string) => {
@@ -54,7 +71,10 @@ function ProfilePage() {
     setName(v);
     setPlayerName(v);
     // keep saved scores attached to the player after a rename
-    if (v.trim()) setBoard(renameBoardEntries(prev, v));
+    if (v.trim()) {
+      setBoard(renameBoardEntries(prev, v));
+      setHistory(renameHistoryEntries(prev, v));
+    }
   };
 
 
@@ -143,17 +163,48 @@ function ProfilePage() {
 
 
 
-        <h2 className="pf-h2">TOP SCORES</h2>
-        <ul className="pf-board">
-          {board.length === 0 && <li className="pf-empty">No scores yet — go play!</li>}
-          {board.map((e, i) => (
-            <li key={`${e.name}-${i}`}>
-              <span>#{i + 1}</span>
-              <span>{e.name}</span>
-              <strong>{e.score.toLocaleString()}</strong>
-            </li>
-          ))}
-        </ul>
+        <div className="pf-tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={tab === "scores"}
+            className={`pf-tab ${tab === "scores" ? "is-on" : ""}`}
+            onClick={() => setTab("scores")}
+          >
+            TOP SCORES
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "history"}
+            className={`pf-tab ${tab === "history" ? "is-on" : ""}`}
+            onClick={() => setTab("history")}
+          >
+            HISTORY
+          </button>
+        </div>
+
+        {tab === "scores" ? (
+          <ul className="pf-board">
+            {board.length === 0 && <li className="pf-empty">No scores yet — go play!</li>}
+            {board.map((e, i) => (
+              <li key={`${e.name}-${i}`}>
+                <span>#{i + 1}</span>
+                <span>{e.name}</span>
+                <strong>{e.score.toLocaleString()}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="pf-board">
+            {history.length === 0 && <li className="pf-empty">No matches played yet.</li>}
+            {history.map((e, i) => (
+              <li key={`${e.at}-${i}`}>
+                <span className="pf-when">{formatWhen(e.at)}</span>
+                <span className="pf-lvl">LVL {e.level}</span>
+                <strong>{e.score.toLocaleString()}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   );
