@@ -16,6 +16,10 @@ import {
   getEquipped,
   setEquipped,
   getBoard,
+  saveScore,
+  renameBoardEntries,
+
+
   getOwnedGuns,
   addOwnedGun,
   getEquippedGun,
@@ -312,13 +316,16 @@ export default function ShootingGallery() {
     };
   }, [showLeaderboard]);
 
-  // when a round ends, refresh the ticket bank
+  // when a round ends, refresh the ticket bank and record the score under the saved name
   useEffect(() => {
     if (state.phase === "over") {
       setBankState(getBank());
-      void playgamaSubmitScore(state.score, playerName || undefined);
+      const who = playerName || getPlayerName();
+      if (who && state.score > 0) setBoard(saveScore(who, state.score));
+      void playgamaSubmitScore(state.score, who || undefined);
     }
   }, [state.phase]);
+
 
   // mobile: show the "aim from below the table" hint and start the live tutorial
   useEffect(() => {
@@ -714,11 +721,15 @@ export default function ShootingGallery() {
   const submitName = () => {
     const clean = nameDraft.trim().slice(0, 14);
     if (!clean) return;
+    const prev = playerName;
     setPlayerName(clean);
     setPlayerNameState(clean);
+    // old players: re-tag their existing local scores with the name they just chose
+    setBoard(renameBoardEntries(prev, clean));
     setShowNamePrompt(false);
     launchRound();
   };
+
 
   const confirmBriefing = () => {
     setShowBriefing(false);
