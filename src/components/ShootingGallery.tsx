@@ -1029,6 +1029,7 @@ export default function ShootingGallery() {
           onShop={() => setShowShop(true)}
           onHelp={() => setShowHelp(true)}
           onLeaderboard={() => setShowLeaderboard(true)}
+          onRewardClaimed={(next) => setBankState(next)}
           onInstructions={() => setShowInstructions(true)}
           onSettings={() => setShowSound(true)}
           onTutorial={
