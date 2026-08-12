@@ -39,6 +39,9 @@ import {
   playgamaGameplayStop,
   showInterstitial,
   showRewarded,
+  playgamaSubmitScore,
+  playgamaLeaderboard,
+  type LeaderboardEntry,
 } from "@/lib/playgama";
 import {
   shouldShowInterstitial,
@@ -105,6 +108,8 @@ export default function ShootingGallery() {
   const [isTouch, setIsTouch] = useState(false);
   const [holding, setHolding] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [globalBoard, setGlobalBoard] = useState<LeaderboardEntry[] | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showSound, setShowSound] = useState(false);
@@ -281,10 +286,23 @@ export default function ShootingGallery() {
   }, [state.wave, maxLevel]);
 
 
+  // pull the global leaderboard whenever the panel opens
+  useEffect(() => {
+    if (!showLeaderboard) return;
+    let alive = true;
+    void playgamaLeaderboard(10).then((rows) => {
+      if (alive) setGlobalBoard(rows);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [showLeaderboard]);
+
   // when a round ends, refresh the ticket bank
   useEffect(() => {
     if (state.phase === "over") {
       setBankState(getBank());
+      void playgamaSubmitScore(state.score, playerName || undefined);
     }
   }, [state.phase]);
 
@@ -541,6 +559,7 @@ export default function ShootingGallery() {
   // any popup / non-playing screen is open: native touch scrolling must work again
   const overlayOpen =
     showHelp ||
+    showLeaderboard ||
     showInstructions ||
     showShop ||
     showSound ||
@@ -978,6 +997,7 @@ export default function ShootingGallery() {
           onPlay={beginRound}
           onShop={() => setShowShop(true)}
           onHelp={() => setShowHelp(true)}
+          onLeaderboard={() => setShowLeaderboard(true)}
           onInstructions={() => setShowInstructions(true)}
           onSettings={() => setShowSound(true)}
           onTutorial={
@@ -1373,6 +1393,46 @@ export default function ShootingGallery() {
       )}
 
       {/* ---------- instructions popup ---------- */}
+      {showLeaderboard && (
+        <div
+          key="ov-leaderboard"
+          className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay px-3 py-3 sm:items-center sm:px-4 sm:py-4"
+          onClick={() => setShowLeaderboard(false)}
+        >
+          <div className="overlay-card help-card" onClick={(e) => e.stopPropagation()}>
+            <h2 className="fair-title text-[clamp(1.6rem,5vw,2.8rem)]">Leaderboard</h2>
+            <p className="fair-sub">
+              {globalBoard === null
+                ? "Loading global scores…"
+                : globalBoard.length
+                  ? "Top players worldwide"
+                  : "Global scores unavailable here — showing your local board"}
+            </p>
+            <ul className="shop-board-list">
+              {(globalBoard && globalBoard.length
+                ? globalBoard
+                : board.map((e) => ({ name: e.name, score: e.score }))
+              ).map((e, i) => (
+                <li key={`${e.name}-${i}`}>
+                  <span>
+                    {i + 1}. {e.name}
+                  </span>
+                  <strong>{e.score.toLocaleString()}</strong>
+                </li>
+              ))}
+              {!board.length && globalBoard !== null && !globalBoard.length && (
+                <li>
+                  <span>No scores yet — play a round!</span>
+                </li>
+              )}
+            </ul>
+            <button className="fair-btn mt-4" onClick={() => setShowLeaderboard(false)}>
+              Back
+            </button>
+          </div>
+        </div>
+      )}
+
       {showHelp && (
         <div
           key="ov-help"

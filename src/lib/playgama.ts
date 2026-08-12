@@ -61,10 +61,22 @@ function simulateAd(kind: "interstitial" | "rewarded"): Promise<void> {
 
 type BridgeState = "loading" | "opened" | "closed" | "failed" | "rewarded";
 
+export type LeaderboardEntry = { name: string; score: number; rank?: number };
+
 type PlaygamaBridge = {
   initialize: () => Promise<void>;
   platform: {
     sendMessage: (message: string) => void;
+  };
+  player?: {
+    id?: string | null;
+    name?: string | null;
+    isAuthorized?: boolean;
+    authorize?: () => Promise<void>;
+  };
+  leaderboard?: {
+    setScore: (options: Record<string, unknown>) => Promise<void>;
+    getEntries: (options?: Record<string, unknown>) => Promise<unknown>;
   };
   advertisement: {
     interstitialState?: BridgeState;
@@ -74,6 +86,7 @@ type PlaygamaBridge = {
     on: (event: string, cb: (state: BridgeState) => void) => () => void;
   };
 };
+
 
 declare global {
   interface Window {
@@ -270,4 +283,80 @@ export async function showRewarded(): Promise<boolean> {
 /** True when running inside a Playgama platform frame. */
 export async function isPlaygamaAvailable() {
   return (await bridgeOrNull()) !== null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Leaderboard (Playgama game id: see public/playgama-bridge-config.json)
+ * ------------------------------------------------------------------ */
+
+/** Playgama game identifier — also mirrored in the bridge config file. */
+export const PLAYGAMA_GAME_ID = "cmslvqbxl02tllj0icmpadmpz";
+
+const LEADERBOARD_ID = "score";
+
+/** Name the platform knows the player by, when it exposes one. */
+export async function playgamaPlayerName(): Promise<string | null> {
+  const bridge = await bridgeOrNull();
+  const name = bridge?.player?.name;
+  return typeof name === "string" && name.trim() ? name.trim() : null;
+}
+
+/** Publishes a score to the platform leaderboard. Never throws. */
+export async function playgamaSubmitScore(score: number, name?: string): Promise<boolean> {
+  const bridge = await bridgeOrNull();
+  if (!bridge?.leaderboard) return false;
+  try {
+    await bridge.leaderboard.setScore({
+      gameId: PLAYGAMA_GAME_ID,
+      leaderboardId: LEADERBOARD_ID,
+      score: Math.max(0, Math.round(score)),
+      ...(name ? { name } : {}),
+    });
+    return true;
+  } catch (err) {
+    console.warn("[playgama] setScore", err);
+    return false;
+  }
+}
+
+function normalizeEntries(raw: unknown): LeaderboardEntry[] {
+  const list = Array.isArray(raw)
+    ? raw
+    : Array.isArray((raw as { entries?: unknown })?.entries)
+      ? ((raw as { entries: unknown[] }).entries)
+      : [];
+  return list
+    .map((item) => {
+      const e = item as Record<string, unknown>;
+      const name =
+        (typeof e['name'] === "string" && e['name']) ||
+        (typeof e['playerName'] === "string" && e['playerName']) ||
+        (typeof e['id'] === "string" && e['id']) ||
+        "Player";
+      const score = Number(e['score'] ?? e['value'] ?? 0);
+      const rank = Number(e['rank'] ?? NaN);
+      return {
+        name: String(name),
+        score: Number.isFinite(score) ? score : 0,
+        ...(Number.isFinite(rank) ? { rank } : {}),
+      } as LeaderboardEntry;
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+/** Reads the platform leaderboard. Returns [] when unavailable. */
+export async function playgamaLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  const bridge = await bridgeOrNull();
+  if (!bridge?.leaderboard) return [];
+  try {
+    const raw = await bridge.leaderboard.getEntries({
+      gameId: PLAYGAMA_GAME_ID,
+      leaderboardId: LEADERBOARD_ID,
+      quantityTop: limit,
+    });
+    return normalizeEntries(raw).slice(0, limit);
+  } catch (err) {
+    console.warn("[playgama] getEntries", err);
+    return [];
+  }
 }
